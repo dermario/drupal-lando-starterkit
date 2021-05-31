@@ -1,146 +1,32 @@
-# Drupal Lando Starterkit
+# Lando test environment
 
-A Drupal Starterkit with GraphQL, GraphQL Twig, Gin Future UI, Minimal Frontend Setup with Webpack and Vanilla JS/Vue running on Lando (Docker).
+This environment is only used to reproduce a blackfire probe segfault.
 
-## Prerequisites
+Make sure lando is installed. https://docs.lando.dev/basics/installation.html
 
-### Get Lando
-Install Lando: https://docs.lando.dev/basics/installation.html
+ * Clone this repository
+ * Set your blackfire credentials in .lando/.blackfire.env
+ * run `lando start` (takes a while)
+ * Open https://drupal-lando-starterkit.lndo.site/ - you should get "Hello Drupal world!"
+ * Run `lando drush cr` in the /web folder
+ * Start a profiler session on https://drupal-lando-starterkit.lndo.site/
+ * You should get "This URL is non reachable: https://drupal-lando-starterkit.lndo.site/ Troubleshooting?"
 
----
+ `lando logs -s appserver`
 
-## Installation
+ ```
+appserver_1        | Mon May 31 07:49:16 2021 (1307): [Debug] Controller-name set to 'Drupal\node\Controller\NodeViewController::view'
+appserver_1        | Mon May 31 07:49:16 2021 (1307): [Fatal Error] Blackfire Probe received a SIGSEGV
+appserver_1        | Mon May 31 07:49:16 2021 (1307): [Error] C backtrace :
+appserver_1        | Mon May 31 07:49:16 2021 (1307): [Error] [*] /usr/local/lib/php/extensions/no-debug-non-zts-20190902/blackfire.so(bf_sigsegv_handler+0x5b) [0x7f020dc476db]
+ ```
 
-### Clone repo
-Clone the repo
-```
-git clone git@github.com:saschaeggi/drupal-lando-starterkit.git drupal-lando-starterkit && cd drupal-lando-starterkit
-```
+* Open web/themes/contrib/gin/gin.theme in an editor.
+* Edit (or comment) this line (146):
+ ```
+ $basethemeurl_with_prefix = \Drupal::urlGenerator()->generateFromRoute('<front>', [], ['absolute' => TRUE]) . drupal_get_path('theme', 'gin');
+ ```
 
-### Let's build the app
-```
-lando start
-```
+And add a 3rd parameter 'foo': `drupal_get_path('theme', 'gin', 'foo');`
 
-### You're ready to go
-https://drupal-lando-starterkit.lndo.site/
-
----
-
-## Commands
-
-### Start containers
-```
-lando start
-```
-
-### Stop containers
-```
-lando stop
-```
-
-#### Poweroff Lando
-```
-lando poweroff
-```
-
-### SSH into container
-```
-lando ssh
-```
-
-### Drush
-Make sure you're in the frontend folder (`cd web`)
-
-```
-lando drush COMAMND
-```
-
-### Composer
-Make sure you're in the frontend folder (`cd web`)
-
-```
-lando composer COMMAND
-```
-
----
-
-## Xdebug
-
-### Start Xdebug
-```
-lando xdebug-on
-```
-
-### Stop Xdebug
-```
-lando xdebug-off
-```
-
----
-
-## Drupal
-
-### Frontend
-https://drupal-lando-starterkit.lndo.site/
-
-### Drupal Backend Login
-https://drupal-lando-starterkit.lndo.site/user
-
-```
-username: admin
-password: drupal
-```
-
-### GraphQL Default API
-https://drupal-lando-starterkit.lndo.site/graphql
-
-Authentication via Bearer access token.
-
-#### Get a Bearer Token
-```
-curl --request POST \
-  --url https://drupal-lando-starterkit.lndo.site/oauth/token \
-  --header 'content-type: application/x-www-form-urlencoded' \
-  --data grant_type=password \
-  --data username=api \
-  --data password=drupal \
-  --data client_id=104a2b89-02fc-4501-aebc-2ec7766cc84f \
-  --data 'client_secret=7U9_kQ_@ozhHi!.v-!'
-  ```
-
----
-
-## Frontend Theme
-
-### Run theme (compile / watch)
-Install
-```
-cd web/themes/frontend/
-nvm use
-npm install
-```
-
-Run watcher
-```
-cd web/themes/frontend/
-npm run dev
-```
-
-Compile assets
-```
-cd web/themes/frontend/
-npm run prod
-```
-
-Scaffold components
-```
-cd web/themes/frontend/
-npm run scaffold
-```
-
----
-
-## Twig debugging
-**Create local settings for debugging**
-Rename `web/sites/default/default.settings.local.php` to `web/sites/default/settings.local.php`
+* Run the profiler again - should work without a problem.

@@ -1,9 +1,11 @@
 name: drupal-lando-starterkit
 recipe: drupal8
+env_file:
+  - .lando/.blackfire.env
 config:
   webroot: web
-  php: '7.3'
-  via: apache:2.4
+  php: '7.4'
+  via: nginx
   database: mysql:5.7
   xdebug: true
   config:
@@ -15,21 +17,26 @@ config:
     port: 3306
 services:
   appserver:
+    overrides:
+      build: ./.lando
+      image: landophp-blackfire:7.4-fpm-2
     scanner: false
+    build_as_root:
+      - sed -i 's/^blackfire.agent_socket.*/blackfire.agent_socket\=tcp:\/\/blackfire:8307/' /usr/local/etc/php/conf.d/zz-blackfire.ini
     build:
       - cd /app/web/ && composer install
     run:
       - cp /app/web/sites/default/default.settings.local.php /app/web/sites/default/settings.local.php
       - cd /app/web/ && drush sql-cli < ../db_dump/drupal.sql
       - cd /app/web/ && drush cr
-tooling:
-  xdebug-on:
-    service: appserver
-    description: Enable xdebug for apache.
-    cmd: "docker-php-ext-enable xdebug && /etc/init.d/apache2 reload"
-    user: root
-  xdebug-off:
-    service: appserver
-    description: Disable xdebug for apache.
-    cmd: "rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && /etc/init.d/apache2 reload"
-    user: root
+    config:
+      php: .lando/config/php/php.ini
+  blackfire:
+    type: compose
+    myUser: blackfire
+    services:
+      image: blackfire/blackfire:2
+      command: blackfire agent
+    overrides:
+      ports:
+        - 8307
