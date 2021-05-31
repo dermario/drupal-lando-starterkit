@@ -21,12 +21,21 @@ appserver_1        | Mon May 31 07:49:16 2021 (1307): [Error] C backtrace :
 appserver_1        | Mon May 31 07:49:16 2021 (1307): [Error] [*] /usr/local/lib/php/extensions/no-debug-non-zts-20190902/blackfire.so(bf_sigsegv_handler+0x5b) [0x7f020dc476db]
  ```
 
-* Open web/themes/contrib/gin/gin.theme in an editor.
-* Edit (or comment) this line (146):
- ```
- $basethemeurl_with_prefix = \Drupal::urlGenerator()->generateFromRoute('<front>', [], ['absolute' => TRUE]) . drupal_get_path('theme', 'gin');
- ```
+Open `web/core/includes/bootstrap.inc` and
 
-And add a 3rd parameter 'foo': `drupal_get_path('theme', 'gin', 'foo');`
+Change these lines:
+```
+function drupal_get_path($type, $name) {
+  return dirname(drupal_get_filename($type, $name));
+}
+```
+
+To:
+
+```
+function drupal_get_path($type, $name) {
+  return dirname(drupal_get_filename($type, $name, NULL));
+}
+```
 
 * Run the profiler again - should work without a problem.
